@@ -1,6 +1,6 @@
 from django.db import models
 
-class Transaction(models.Model):
+class TradeOperation(models.Model):
     trade_date = models.DateField()
     operation = models.CharField(max_length=100)
     market = models.CharField(max_length=100)

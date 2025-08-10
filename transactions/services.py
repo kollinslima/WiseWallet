@@ -1,7 +1,7 @@
 import csv
 import io
 
-from .models import Transaction
+from .models import TradeOperation
 from datetime import datetime
 from decimal import Decimal
 from django.core.exceptions import ValidationError
@@ -20,25 +20,25 @@ def process_transactions_file(file):
         for row in reader:
             try:
                 trade_date = datetime.strptime(row["Data do Negócio"], '%d/%m/%Y').date()
-                movement_type = row["Tipo de Movimentação"]
+                operation = row["Tipo de Movimentação"]
                 market = row["Mercado"]
                 due_date_str = row["Prazo/Vencimento"]
                 due_date = datetime.strptime(due_date_str, '%d/%m/%Y').date() if due_date_str != '-' else None
                 institution = row["Instituição"]
-                trading_code = row["Código de Negociação"]
+                ticker = row["Código de Negociação"]
                 quantity = int(row["Quantidade"])
                 price_str = row["Preço"].replace('R$', '').strip().replace('.', '').replace(',', '.')
                 price = Decimal(price_str)
                 value_str = row["Valor"].replace('R$', '').strip().replace('.', '').replace(',', '.')
                 value = Decimal(value_str)
 
-                Transaction.objects.create(
+                TradeOperation.objects.create(
                     trade_date=trade_date,
-                    movement_type=movement_type,
+                    operation=operation,
                     market=market,
                     due_date=due_date,
                     institution=institution,
-                    trading_code=trading_code,
+                    ticker=ticker,
                     quantity=quantity,
                     price=price,
                     value=value,
