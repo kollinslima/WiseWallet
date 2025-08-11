@@ -1,6 +1,8 @@
 from .forms import TransactionsFileUploadForm
-from django.views.generic.edit import FormView
+from .services import process_transactions_file
+from django.core.exceptions import ValidationError
 from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
 
 class TransactionsFileUploadFormView(FormView):
     form_class = TransactionsFileUploadForm
@@ -9,8 +11,12 @@ class TransactionsFileUploadFormView(FormView):
 
     def form_valid(self, form):
         files = form.cleaned_data["file_field"]
-        for f in files:
-            print(f)
+        try:
+            for f in files:
+                process_transactions_file(f)
+        except ValidationError as e:
+            form.add_error('file_field', e.message)
+            return self.form_invalid(form)
         return super().form_valid(form)
 
 class TransactionsFileUploadSuccessView(TemplateView):
