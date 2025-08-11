@@ -1,6 +1,6 @@
 import openpyxl
 
-from .models import TradeOperation
+from .models import TradeOperations
 from datetime import datetime
 from decimal import Decimal
 from django.core.exceptions import ValidationError
@@ -19,12 +19,12 @@ def process_transactions_file(file):
     except Exception as e:
         raise ValidationError("Cannot open XLSX file.")
     
-    with transaction.atomic():
-        for row_index in range(2, sheet.max_row + 1):
-            row_values = [cell.value for cell in sheet[row_index]]
-            row = dict(zip(header, row_values))
-            
-            try:
+    try:
+        with transaction.atomic():
+            for row_index in range(2, sheet.max_row + 1):
+                row_values = [cell.value for cell in sheet[row_index]]
+                row = dict(zip(header, row_values))
+                
                 trade_date = row["Data do Negócio"].date() if isinstance(row["Data do Negócio"], datetime) else datetime.strptime(row["Data do Negócio"], '%d/%m/%Y').date()
                 operation = row["Tipo de Movimentação"]
                 market = row["Mercado"]
@@ -38,7 +38,7 @@ def process_transactions_file(file):
                 value_str = str(row["Valor"]).replace('R$', '').strip().replace('.', '').replace(',', '.')
                 value = Decimal(value_str)
 
-                TradeOperation.objects.create(
+                TradeOperations.objects.update_or_create(
                     trade_date=trade_date,
                     operation=operation,
                     market=market,
@@ -49,6 +49,7 @@ def process_transactions_file(file):
                     price=price,
                     value=value,
                 )
-            except (ValueError, KeyError, TypeError) as e:
-                raise ValidationError(f"Invalid data in row: {row}. Error: {e}")
+
+    except (ValueError, KeyError, TypeError) as e:
+        raise ValidationError(f"Invalid data in row: {row}. Error: {e}")
 

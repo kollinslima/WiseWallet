@@ -1,5 +1,5 @@
 from .forms import TransactionsFileUploadForm
-from .models import TradeOperation
+from .models import TradeOperations
 from .services import process_transactions_file
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -28,20 +28,20 @@ class TransactionsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        summary = TradeOperation.objects.all()
+        summary = TradeOperations.objects.all()
 
         context['summary'] = summary
         return context
 
 
 class TransactionDetailView(ListView):
-    model = TradeOperation
+    model = TradeOperations
     template_name = 'transactions/transaction_detail.html'
     context_object_name = 'object_list'
 
     def get_queryset(self):
         ticker = self.kwargs.get('ticker')
-        queryset = TradeOperation.objects.filter(ticker=ticker)
+        queryset = TradeOperations.objects.filter(ticker=ticker)
 
         # Filtering
         filter_operation = self.request.GET.get('filter_operation', '')

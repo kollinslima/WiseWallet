@@ -1,6 +1,6 @@
 from django.db import models
 
-class TradeOperation(models.Model):
+class TradeOperations(models.Model):
     pk = models.CompositePrimaryKey(
         "trade_date", "operation", "market", "institution", "ticker", "quantity", "price"
     )
