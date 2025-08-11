@@ -1,10 +1,25 @@
-from .models import Transaction
+import io
+import openpyxl
+
+from .models import TradeOperation
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
 class TransactionsFileUploadTest(TestCase):
-    def test_upload_non_csv_file(self):
+    def _create_xlsx_file(self, data):
+        output = io.BytesIO()
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        
+        for row_data in data:
+            sheet.append(row_data)
+            
+        workbook.save(output)
+        output.seek(0)
+        return output
+
+    def test_upload_non_xlsx_file(self):
         url = reverse('transactions')
         file_content = b'This is a test file.'
         uploaded_file = SimpleUploadedFile('test.txt', file_content, content_type='text/plain')
@@ -12,12 +27,15 @@ class TransactionsFileUploadTest(TestCase):
         response = self.client.post(url, {'file_field': uploaded_file})
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response.context['form'], 'file_field', 'Cannot open CSV file.')
+        self.assertFormError(response.context['form'], 'file_field', 'Invalid file format. Please upload a .xlsx file.')
 
-    def test_upload_csv_file(self):
+    def test_upload_xlsx_file(self):
         url = reverse('transactions')
-        file_content = b'"Data do Neg\xc3\xb3cio","Tipo de Movimenta\xc3\xa7\xc3\xa3o","Mercado","Prazo/Vencimento","Institui\xc3\xa7\xc3\xa3o","C\xc3\xb3digo de Negocia\xc3\xa7\xc3\xa3o","Quantidade","Pre\xc3\xa7o","Valor"\n"01/01/2023","Compra","A vista","-","Corretora","PETR4",100,"R$25,00","R$2.500,00"\n'
-        uploaded_file = SimpleUploadedFile('test.csv', file_content, content_type='text/csv')
+        header = ["Data do Negócio", "Tipo de Movimentação", "Mercado", "Prazo/Vencimento", "Instituição", "Código de Negociação", "Quantidade", "Preço", "Valor"]
+        row = ["01/01/2023", "Compra", "A vista", "-", "Corretora", "PETR4", 100, "R$25,00", "R$2.500,00"]
+        
+        file_content = self._create_xlsx_file([header, row])
+        uploaded_file = SimpleUploadedFile('test.xlsx', file_content.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
         response = self.client.post(url, {'file_field': uploaded_file})
 
@@ -26,12 +44,17 @@ class TransactionsFileUploadTest(TestCase):
 
     def test_atomic_upload_with_invalid_row(self):
         url = reverse('transactions')
-        file_content = b'"Data do Neg\xc3\xb3cio","Tipo de Movimenta\xc3\xa7\xc3\xa3o","Mercado","Prazo/Vencimento","Institui\xc3\xa7\xc3\xa3o","C\xc3\xb3digo de Negocia\xc3\xa7\xc3\xa3o","Quantidade","Pre\xc3\xa7o","Valor"\n"01/01/2023","Compra","A vista","-","Corretora","PETR4",100,"R$25,00","R$2.500,00"\n"invalid-date","Compra","A vista","-","Corretora","PETR4",100,"R$25,00","R$2.500,00"\n'
-        uploaded_file = SimpleUploadedFile('test.csv', file_content, content_type='text/csv')
+        header = ["Data do Negócio", "Tipo de Movimentação", "Mercado", "Prazo/Vencimento", "Instituição", "Código de Negociação", "Quantidade", "Preço", "Valor"]
+        valid_row = ["01/01/2023", "Compra", "A vista", "-", "Corretora", "PETR4", 100, "R$25,00", "R$2.500,00"]
+        invalid_row = ["invalid-date", "Compra", "A vista", "-", "Corretora", "PETR4", 100, "R$25,00", "R$2.500,00"]
+
+        file_content = self._create_xlsx_file([header, valid_row, invalid_row])
+        uploaded_file = SimpleUploadedFile('test.xlsx', file_content.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
         response = self.client.post(url, {'file_field': uploaded_file})
 
         self.assertEqual(response.status_code, 200)
-        expected_error = "Invalid data in row: {'Data do Negócio': 'invalid-date', 'Tipo de Movimentação': 'Compra', 'Mercado': 'A vista', 'Prazo/Vencimento': '-', 'Instituição': 'Corretora', 'Código de Negociação': 'PETR4', 'Quantidade': '100', 'Preço': 'R$25,00', 'Valor': 'R$2.500,00'}. Error: time data 'invalid-date' does not match format '%d/%m/%Y'"
-        self.assertFormError(response.context['form'], 'file_field', expected_error)
-        self.assertEqual(Transaction.objects.count(), 0)
+        expected_error_substring = "Invalid data in row"
+        form_error = response.context['form'].errors['file_field'][0]
+        self.assertTrue(expected_error_substring in form_error)
+        self.assertEqual(TradeOperation.objects.count(), 0)

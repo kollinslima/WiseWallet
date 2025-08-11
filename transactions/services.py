@@ -1,5 +1,4 @@
-import csv
-import io
+import openpyxl
 
 from .models import TradeOperation
 from datetime import datetime
@@ -8,28 +7,35 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 def process_transactions_file(file):
+    if not file.name.endswith('.xlsx'):
+        raise ValidationError("Invalid file format. Please upload a .xlsx file.")
     try:
-        if file.content_type != 'text/csv':
-            raise
-
-        reader = csv.DictReader(io.TextIOWrapper(file, encoding='utf-8'))
+        workbook = openpyxl.load_workbook(file)
+        sheet = workbook.active
+        
+        # Get header row
+        header = [cell.value for cell in sheet[1]]
+        
     except Exception as e:
-        raise ValidationError("Cannot open CSV file.")
+        raise ValidationError("Cannot open XLSX file.")
     
     with transaction.atomic():
-        for row in reader:
+        for row_index in range(2, sheet.max_row + 1):
+            row_values = [cell.value for cell in sheet[row_index]]
+            row = dict(zip(header, row_values))
+            
             try:
-                trade_date = datetime.strptime(row["Data do Negócio"], '%d/%m/%Y').date()
+                trade_date = row["Data do Negócio"].date() if isinstance(row["Data do Negócio"], datetime) else datetime.strptime(row["Data do Negócio"], '%d/%m/%Y').date()
                 operation = row["Tipo de Movimentação"]
                 market = row["Mercado"]
                 due_date_str = row["Prazo/Vencimento"]
-                due_date = datetime.strptime(due_date_str, '%d/%m/%Y').date() if due_date_str != '-' else None
+                due_date = due_date_str.date() if isinstance(due_date_str, datetime) else (datetime.strptime(due_date_str, '%d/%m/%Y').date() if due_date_str and due_date_str != '-' else None)
                 institution = row["Instituição"]
                 ticker = row["Código de Negociação"]
                 quantity = int(row["Quantidade"])
-                price_str = row["Preço"].replace('R$', '').strip().replace('.', '').replace(',', '.')
+                price_str = str(row["Preço"]).replace('R$', '').strip().replace('.', '').replace(',', '.')
                 price = Decimal(price_str)
-                value_str = row["Valor"].replace('R$', '').strip().replace('.', '').replace(',', '.')
+                value_str = str(row["Valor"]).replace('R$', '').strip().replace('.', '').replace(',', '.')
                 value = Decimal(value_str)
 
                 TradeOperation.objects.create(
@@ -43,6 +49,6 @@ def process_transactions_file(file):
                     price=price,
                     value=value,
                 )
-            except (ValueError, KeyError) as e:
+            except (ValueError, KeyError, TypeError) as e:
                 raise ValidationError(f"Invalid data in row: {row}. Error: {e}")
 
