@@ -46,7 +46,7 @@ WiseWallet is a portfolio manager application built with Django. It helps you tr
     Your `.env` file should look like this:
     ```
     SECRET_KEY=your-secret-key-here
-    DEBUG=True
+    DEBUG=True or False
     ```
 
 5.  **Run database migrations:**
