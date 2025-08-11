@@ -1,6 +1,9 @@
 from django.db import models
 
 class TradeOperation(models.Model):
+    pk = models.CompositePrimaryKey(
+        "trade_date", "operation", "market", "institution", "ticker", "quantity", "price"
+    )
     trade_date = models.DateField()
     operation = models.CharField(max_length=100)
     market = models.CharField(max_length=100)
@@ -12,5 +15,4 @@ class TradeOperation(models.Model):
     value = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f'{self.trade_date} - {self.trading_code} - {self.quantity}@{self.price}'
-
+        return f'{self.trade_date} - {self.ticker} - {self.quantity}@{self.price}'
