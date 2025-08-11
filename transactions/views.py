@@ -1,33 +1,16 @@
-from django.db.models import Sum
 from .forms import TransactionsFileUploadForm
 from .models import TradeOperation
 from .services import process_transactions_file
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
+from django.urls import reverse_lazy
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 
 class TransactionsFileUploadFormView(FormView):
     form_class = TransactionsFileUploadForm
-    template_name = "transactions/transactions.html"
-    success_url = "upload/success"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Summary of trades. 'C' means 'Compra' (Buy)
-        summary = TradeOperation.objects.filter(operation='C').values('ticker').annotate(
-            total_quantity=Sum('quantity'),
-            total_value=Sum('value'),
-        ).order_by('ticker')
-
-        # Calculate average price and get institutions for each ticker
-        for item in summary:
-            item['average_price'] = item['total_value'] / item['total_quantity'] if item['total_quantity'] > 0 else 0
-            institutions = TradeOperation.objects.filter(ticker=item['ticker']).values_list('institution', flat=True).distinct()
-            item['institutions'] = ", ".join(list(institutions))
-
-        context['summary'] = summary
-        return context
+    template_name = "transactions/transactions_upload.html"
+    success_url = reverse_lazy('root')
 
     def form_valid(self, form):
         files = form.cleaned_data["file_field"]
@@ -39,8 +22,16 @@ class TransactionsFileUploadFormView(FormView):
             return self.form_invalid(form)
         return super().form_valid(form)
 
-class TransactionsFileUploadSuccessView(TemplateView):
-    template_name = "transactions/transactions_upload_success.html"
+class TransactionsView(TemplateView):
+    template_name = "transactions/transactions.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        summary = TradeOperation.objects.all()
+
+        context['summary'] = summary
+        return context
 
 
 class TransactionDetailView(ListView):
