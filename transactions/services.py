@@ -32,7 +32,7 @@ def process_transactions_file(file):
                 due_date = due_date_str.date() if isinstance(due_date_str, datetime) else (datetime.strptime(due_date_str, '%d/%m/%Y').date() if due_date_str and due_date_str != '-' else None)
                 institution = row["Instituição"]
                 ticker = row["Código de Negociação"]
-                quantity = int(row["Quantidade"])
+                amount = int(row["Quantidade"])
                 price_str = str(row["Preço"]).replace('R$', '').strip().replace('.', '').replace(',', '.')
                 price = Decimal(price_str)
                 value_str = str(row["Valor"]).replace('R$', '').strip().replace('.', '').replace(',', '.')
@@ -45,7 +45,7 @@ def process_transactions_file(file):
                     due_date=due_date,
                     institution=institution,
                     ticker=ticker,
-                    quantity=quantity,
+                    amount=amount,
                     price=price,
                     value=value,
                 )
