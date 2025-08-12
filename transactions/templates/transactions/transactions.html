@@ -16,17 +16,21 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th scope="col">Ticker</th>
-                        <th scope="col">Total Quantity</th>
+                        <th scope="col">Asset</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Average Buy Price (R$)</th>
                         <th scope="col">Total Value (R$)</th>
-                        <th scope="col">Average Price (R$)</th>
                         <th scope="col">Institutions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in summary %}
                         <tr>
-                            <td><a href="{% url 'root.detail' item.ticker %}">{{ item.ticker }}</a></td>
+                            {% comment %} <td><a href="{% url 'root.detail' item.ticker %}">{{ item.ticker }}</a></td> {% endcomment %}
+                            <td>{{ item.ticker }}</td>
+                            <td>{{ item.amount }}</td>
+                            <td>{{ item.average_buy_price }}</td>
+                            <td>{{ item.total_value }}</td>
                             <td>{{ item.institutions }}</td>
                         </tr>
                     {% endfor %}
