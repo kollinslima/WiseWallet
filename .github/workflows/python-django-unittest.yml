@@ -31,4 +31,5 @@ jobs:
 
     - name: Run Python Unittests
       run: |
+        mkdir -p logs
         pytest
