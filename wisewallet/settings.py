@@ -130,3 +130,45 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': config('LOG_DISABLE', default=True, cast=bool),
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': config('LOG_LEVEL', default='WARNING'),
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'level': config('LOG_LEVEL', default='WARNING'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': config('LOG_FILE', default='logs/django.log'),
+            'maxBytes': 1024*1024*5, # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': config('LOG_LEVEL', default='WARNING'),
+            'propagate': False,
+        },
+        'transactions': {
+            'handlers': ['console', 'file'],
+            'level': config('LOG_LEVEL', default='WARNING'),
+            'propagate': True,
+        },
+    },
+}

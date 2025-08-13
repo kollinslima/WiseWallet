@@ -1,13 +1,44 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block main_content %}
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form }}
-    <button type="submit">Upload Files</button>
-</form>
+<h1 class="mb-4">Current Possition</h1>
+
+<div class="d-grid justify-content-end">
+    <a href="{% url 'root.upload' %}" class="btn btn-primary">Upload</a>
+</div>
+
+<h2 class="mt-5 mb-3">Summary of Trades</h2>
+
+<div class="card">
+    <div class="card-body">
+        {% if summary %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Asset</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Average Buy Price (R$)</th>
+                        <th scope="col">Total Value (R$)</th>
+                        <th scope="col">Institutions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in summary %}
+                        <tr>
+                            <td><a href="{% url 'root.detail' ticker=item.ticker %}">{{ item.ticker }}</a></td>
+                            <td>{{ item.amount }}</td>
+                            <td>{{ item.average_buy_price }}</td>
+                            <td>{{ item.total_value }}</td>
+                            <td>{{ item.institutions }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-center">No trades found. Import a report to get started.</p>
+        {% endif %}
+    </div>
+</div>
 
 {% endblock %}
-
-
