@@ -23,8 +23,8 @@ WiseWallet is a portfolio manager application built with Django. It helps you tr
 
 2.  **Create and activate a virtual environment:**
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    python -m venv .venv
+    source .venv/bin/activate  # On Windows, use `venv\Scripts\activate`
     ```
 
 3.  **Install the dependencies:**
@@ -37,22 +37,24 @@ WiseWallet is a portfolio manager application built with Django. It helps you tr
     ```bash
     cp .env.example .env
     ```
-    Open the `.env` file and add the following environment variables.
-    You will need to generate a secret key. You can use the following command to generate one:
+    Open the `.env` file and add set-up the environment variables or remove unwanted variables to use the default
+    
+    To generate a secret key you can use the following command:
     ```bash
     python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
     ```
 
-    Your `.env` file should look like this:
-    ```
-    SECRET_KEY=your-secret-key-here
-    DEBUG=True or False
-    ```
-
-5.  **Run database migrations:**
+6.  **Run database migrations:**
     ```bash
     python manage.py migrate
     ```
+    
+## Running tests
+
+To execute unit tests, run the following command
+```bash
+pytest
+```
 
 ## Running the Application
 
