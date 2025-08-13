@@ -66,3 +66,63 @@ def test_transactions_root_upload_of_corrupted_xlsx_file(client):
     assert 'Cannot open XLSX file.' in response.content.decode('utf-8')
     assert 0 == TransactionOperations.objects.count()
 
+@pytest.mark.django_db
+def test_transactions_root_upload_of_incomplete_xlsx_file(client):
+    b3_incomplete_transaction_file = B3TransactionsFileFactory(
+        header=["Date", "Transaction", "Ticker", "Amount", "Total Value"],
+        num_of_transactions=1
+    )
+    form_data = {
+        'file_field': b3_incomplete_transaction_file
+    }
+
+    ### Act ###
+    response = client.post(
+        path='/transactions/upload',
+        data=form_data,
+        follow=True
+    )
+
+    ### Assert ###
+    assert 200 == response.status_code
+    assert 'transactions/transactions_upload.html' in response.template_name
+    assert "Invalid data in row" in response.content.decode('utf-8')
+    assert "Error: &lt;B3TransactionsReportHeader.IN_OUT_TRANSACTION_TYPE: &#x27;Entrada/Saída&#x27;&gt;" in response.content.decode('utf-8')
+    assert 0 == TransactionOperations.objects.count()
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("field,value", [
+    ("Data", "INVALID"),
+    ("Produto", "INVALID"),
+    ("Quantidade", "INVALID"),
+    ("Valor da Operação", "INVALID"),
+])
+def test_transactions_root_upload_of_invalid_xlsx_file(client, field, value):
+    ### Arrange ###
+    content = [["Credito", "01/01/2024", "Transferência - Liquidação", "TICKER11 - NAME", "INSTITUTION", 100, "R$ 10,00", "R$ 1.000,00"]]
+    
+    header = ["Entrada/Saída", "Data", "Movimentação", "Produto", "Instituição", "Quantidade", "Preço unitário", "Valor da Operação"]
+    field_index = header.index(field)
+    
+    content[0][field_index] = value
+    
+    b3_invalid_transaction_file = B3TransactionsFileFactory(
+        content=content,
+    )
+    
+    form_data = {
+        'file_field': b3_invalid_transaction_file
+    }
+
+    ### Act ###
+    response = client.post(
+        path='/transactions/upload',
+        data=form_data,
+        follow=True
+    )
+
+    ### Assert ###
+    assert 200 == response.status_code
+    assert 'transactions/transactions_upload.html' in response.template_name
+    assert "Invalid data in row" in response.content.decode('utf-8')
+    assert 0 == TransactionOperations.objects.count()

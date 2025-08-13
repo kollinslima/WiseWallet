@@ -128,6 +128,6 @@ def process_transactions_file(file):
                     total_value=total_value,
                 )
 
-    except (ValueError, KeyError, TypeError) as e:
+    except Exception as e:
         raise ValidationError(f"Invalid data in row: {row_entry}. Error: {e}")
 

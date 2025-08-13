@@ -1,5 +1,7 @@
 import logging
 
+from django.db.models import DecimalField
+
 from .forms import TransactionsFileUploadForm
 from .models import TransactionOperations, AssetIdentification
 from .services import process_transactions_file
@@ -41,14 +43,27 @@ class TransactionsView(TemplateView):
             asset_buys = (TransactionOperations.objects
                             .filter(asset=asset, operation=TransactionOperations.TransactionOperation.BUY)
                             .aggregate(
-                                buy_amount=Sum('amount', default=0),
-                                total_buy_value=Sum('total_value', default=0)+Sum('fees', default=0)
+                                buy_amount=Sum(
+                                    'amount', 
+                                    default=0, 
+                                    output_field=DecimalField(max_digits=30, decimal_places=18)),
+                                total_buy_value=Sum(
+                                        'total_value', 
+                                        default=0, 
+                                        output_field=DecimalField(max_digits=12, decimal_places=2)),
+                                total_buy_fees=Sum(
+                                        'fees', 
+                                        default=0,
+                                        output_field=DecimalField(max_digits=12, decimal_places=2))
                             ))
 
             asset_sells = (TransactionOperations.objects
                             .filter(asset=asset, operation=TransactionOperations.TransactionOperation.SELL)
                             .aggregate(
-                                sell_amount=Sum('amount', default=0)
+                                sell_amount=Sum(
+                                    'amount',
+                                    default=0,
+                                    output_field=DecimalField(max_digits=30, decimal_places=18)),
                             ))
 
             institutions = (TransactionOperations.objects
@@ -62,7 +77,7 @@ class TransactionsView(TemplateView):
             item['institutions'] = ', '.join(institutions)
 
             try:
-                item['average_buy_price'] = asset_buys['total_buy_value']/asset_buys['buy_amount']
+                item['average_buy_price'] = (asset_buys['total_buy_value'] + asset_buys['total_buy_fees'])/asset_buys['buy_amount']
             except InvalidOperation:
                 item['average_buy_price'] = 0
 
