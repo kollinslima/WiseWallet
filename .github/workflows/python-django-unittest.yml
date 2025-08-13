@@ -26,10 +26,15 @@ jobs:
         
     - name: Install dependencies
       run: |
+        sudo locale-gen pt_BR.UTF-8
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run Python Unittests
+    - name: Prepare environment
       run: |
         mkdir -p logs
+        sudo update-locale
+
+    - name: Run Python Unittests
+      run: |
         pytest
