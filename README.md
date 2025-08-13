@@ -1,71 +1,62 @@
-# Wise Wallet
+# WiseWallet
 
-wise-wallet is a web application to manage personal finances.
+WiseWallet is a portfolio manager application built with Django. It helps you track your assets and transactions.
 
-## Getting Started
+## Features
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+*   **Dashboard:** View a summary of your portfolio.
+*   **Transaction Management:** Add, edit, and view your transactions.
+*   **Portfolio Tracking:** See the value of your assets over time.
 
-### Prerequisites
+## Prerequisites
 
-* Python 3.9+
-* pip
+*   Python 3.8+
+*   pip
 
-### Installation
+## Setup and Installation
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd wise-wallet
-   ```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/username/wisewallet.git
+    cd wisewallet
+    ```
 
-2. Create a virtual environment and activate it:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   ```
-   For Windows, use `venv\Scripts\activate`.
+2.  **Create and activate a virtual environment:**
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    ```
 
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+3.  **Install the dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-4. Run the database migrations:
+4.  **Set up environment variables:**
+    Create a `.env` file in the root directory of the project by copying the example file:
+    ```bash
+    cp .env.example .env
+    ```
+    Open the `.env` file and add set-up the environment variables or remove unwanted variables to use the default
+    
+    To generate a secret key you can use the following command:
+    ```bash
+    python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+    ```
+
+6.  **Run database migrations:**
     ```bash
     python manage.py migrate
     ```
+    
+## Running tests
 
-## Configuration
+To execute unit tests, run the following command
+```bash
+pytest
+```
 
-The application uses a `.env` file for configuration. A `.env.example` file is provided with all the available variables.
-
-1. Create a `.env` file by copying the example:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Edit the `.env` file and set the following variables:
-
-   - `SECRET_KEY`: A secret key for a particular Django installation. You can generate one using the following command:
-     ```bash
-     python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
-     ```
-   - `DEBUG`: Set to `True` for development and `False` for production.
-   - `DB_ENGINE`: Database engine. Defaults to `django.db.backends.sqlite3`.
-   - `DB_NAME`: Database name. Defaults to `db.sqlite3`.
-   - `DB_USER`: Database user.
-   - `DB_PASSWORD`: Database password.
-   - `DB_HOST`: Database host.
-   - `DB_PORT`: Database port.
-   - `EMAIL_BACKEND`: Email backend. Defaults to `django.core.mail.backends.console.EmailBackend`.
-   - `EMAIL_HOST`: Email host.
-   - `EMAIL_PORT`: Email port.
-   - `EMAIL_USE_TLS`: Whether to use TLS.
-   - `EMAIL_HOST_USER`: Email host user.
-   - `EMAIL_HOST_PASSWORD`: Email host password.
-
-## Usage
+## Running the Application
 
 To run the development server, use the following command:
 ```bash
@@ -73,9 +64,7 @@ python manage.py runserver
 ```
 The application will be available at `http://127.0.0.1:8000/`.
 
-## Running the tests
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-To run the unit tests, use the following command:
-```bash
-python manage.py test
-```
+Please make sure to update tests as appropriate.
