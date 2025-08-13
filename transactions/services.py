@@ -12,6 +12,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from enum import StrEnum
 
+logger = logging.getLogger(__name__)
+
 class B3TransactionsReportHeader(StrEnum):
     IN_OUT_TRANSACTION_TYPE = "Entrada/Saída"
     DATE                    = "Data"
@@ -76,6 +78,8 @@ def process_transactions_file(file):
                 row_values = [cell.value for cell in sheet[row_index]]
                 row_entry = dict(zip(header, row_values))
 
+                logger.info(f"Processing B3 transactions upload: {row_entry}")
+
                 transaction_operation = _get_transaction_operation(
                     row_entry[B3TransactionsReportHeader.IN_OUT_TRANSACTION_TYPE],
                     row_entry[B3TransactionsReportHeader.TRANSACTION_TYPE]
@@ -91,8 +95,8 @@ def process_transactions_file(file):
                 )
                 
                 asset_identification,_ = AssetIdentification.objects.get_or_create(
-                        asset_ticker         = asset_description[0],
-                        asset_name           = asset_description[1],
+                        asset_ticker         = asset_description[0].strip(),
+                        asset_name           = asset_description[1].strip(),
                         asset_classification = asset_classification
                 )
 

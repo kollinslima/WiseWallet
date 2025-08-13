@@ -26,8 +26,7 @@
                 <tbody>
                     {% for item in summary %}
                         <tr>
-                            {% comment %} <td><a href="{% url 'root.detail' item.ticker %}">{{ item.ticker }}</a></td> {% endcomment %}
-                            <td>{{ item.ticker }}</td>
+                            <td><a href="{% url 'root.detail' ticker=item.ticker %}">{{ item.ticker }}</a></td>
                             <td>{{ item.amount }}</td>
                             <td>{{ item.average_buy_price }}</td>
                             <td>{{ item.total_value }}</td>

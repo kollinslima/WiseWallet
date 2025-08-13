@@ -20,17 +20,17 @@ class TransactionInstitutions(models.Model):
 
 class TransactionOperations(models.Model):
 
-    class TransactionOperation(models.IntegerChoices):
-        BUY               = auto(), _("Buy")
-        SELL              = auto(), _("Sell")
-        UNKNOWN_OPERATION = auto(), _("UNKNOWN_OPERATION")
+    class TransactionOperation(models.TextChoices):
+        BUY               = "Buy", _("Buy")
+        SELL              = "Sell", _("Sell")
+        UNKNOWN_OPERATION = "Unknown", _("UNKNOWN_OPERATION")
 
     asset            = models.ForeignKey(AssetIdentification,
                                          on_delete=models.CASCADE)
     institution_name = models.ForeignKey(TransactionInstitutions,
                                          on_delete=models.SET_DEFAULT,
                                          default=UNKNOWN_INSTITUTION)
-    operation        = models.IntegerField(choices=TransactionOperation)
+    operation        = models.CharField(choices=TransactionOperation)
     operation_date   = models.DateField(null=True, blank=True)
     settlement_date  = models.DateField()
     amount           = models.DecimalField(max_digits=30, decimal_places=18)

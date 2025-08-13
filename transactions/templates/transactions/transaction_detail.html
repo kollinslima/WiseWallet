@@ -1,25 +1,25 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block main_content %}
 
-<h1 class="mb-4">Trades for {{ ticker }}</h1>
+<h1 class="mb-4">Transactions for {{ ticker }}</h1>
 
-<a href="{% url 'transactions' %}" class="btn btn-secondary mb-3">Back to Summary</a>
+<a href="{% url 'root' %}" class="btn btn-secondary mb-3">Back to Summary</a>
 
 <div class="card mb-4">
     <div class="card-header">
         Filters and Sorting
     </div>
     <div class="card-body">
-        <form method="get" action="{% url 'transactions.detail' ticker %}">
+        <form method="get" action="{% url 'root.detail' ticker %}">
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="filter_operation" class="form-label">Filter by Operation</label>
                         <select name="filter_operation" id="filter_operation" class="form-select">
                             <option value="" {% if not current_filter_operation %}selected{% endif %}>All</option>
-                            <option value="C" {% if current_filter_operation == 'C' %}selected{% endif %}>Buy (C)</option>
-                            <option value="V" {% if current_filter_operation == 'V' %}selected{% endif %}>Sell (V)</option>
+                            <option value="Buy" {% if current_filter_operation == '1' %}selected{% endif %}>Buy</option>
+                            <option value="Sell" {% if current_filter_operation == '2' %}selected{% endif %}>Sell</option>
                         </select>
                     </div>
                 </div>
@@ -27,14 +27,12 @@
                     <div class="mb-3">
                         <label for="sort" class="form-label">Sort by</label>
                         <select name="sort" id="sort" class="form-select">
-                            <option value="-trade_date" {% if current_sort == '-trade_date' %}selected{% endif %}>Trade Date (Newest First)</option>
-                            <option value="trade_date" {% if current_sort == 'trade_date' %}selected{% endif %}>Trade Date (Oldest First)</option>
-                            <option value="-price" {% if current_sort == '-price' %}selected{% endif %}>Price (High to Low)</option>
-                            <option value="price" {% if current_sort == 'price' %}selected{% endif %}>Price (Low to High)</option>
-                            <option value="-quantity" {% if current_sort == '-quantity' %}selected{% endif %}>Quantity (High to Low)</option>
-                            <option value="quantity" {% if current_sort == 'quantity' %}selected{% endif %}>Quantity (Low to High)</option>
-                            <option value="-value" {% if current_sort == '-value' %}selected{% endif %}>Value (High to Low)</option>
-                            <option value="value" {% if current_sort == 'value' %}selected{% endif %}>Value (Low to High)</option>
+                            <option value="-settlement_date" {% if current_sort == '-settlement_date' %}selected{% endif %}>Settlement Date (Newest First)</option>
+                            <option value="settlement_date" {% if current_sort == 'settlement_date' %}selected{% endif %}>Settlement Date (Oldest First)</option>
+                            <option value="-total_value" {% if current_sort == '-total_value' %}selected{% endif %}>Total Value (High to Low)</option>
+                            <option value="total_value" {% if current_sort == 'total_value' %}selected{% endif %}>Total Value (Low to High)</option>
+                            <option value="-amount" {% if current_sort == '-amount' %}selected{% endif %}>Quantity (High to Low)</option>
+                            <option value="amount" {% if current_sort == 'amount' %}selected{% endif %}>Quantity (Low to High)</option>
                         </select>
                     </div>
                 </div>
@@ -44,33 +42,26 @@
     </div>
 </div>
 
-
 <div class="card">
     <div class="card-body">
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th scope="col">Trade Date</th>
+                    <th scope="col">Settlement Date</th>
                     <th scope="col">Operation</th>
-                    <th scope="col">Market</th>
-                    <th scope="col">Due Date</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Total Value (R$)</th>
                     <th scope="col">Institution</th>
-                    <th scope="col">Quantity</th>
-                    <th scope="col">Price (R$)</th>
-                    <th scope="col">Value (R$)</th>
                 </tr>
             </thead>
             <tbody>
-                {% for trade in object_list %}
+                {% for transaction in transactions %}
                     <tr>
-                        <td>{{ trade.trade_date|date:"d/m/Y" }}</td>
-                        <td>{{ trade.operation }}</td>
-                        <td>{{ trade.market }}</td>
-                        <td>{{ trade.due_date|date:"d/m/Y"|default:"-" }}</td>
-                        <td>{{ trade.institution }}</td>
-                        <td>{{ trade.quantity }}</td>
-                        <td>{{ trade.price|floatformat:2 }}</td>
-                        <td>{{ trade.value|floatformat:2 }}</td>
+                        <td>{{ transaction.settlement_date|date:"d/m/Y" }}</td>
+                        <td>{{ transaction.operation }}</td>
+                        <td>{{ transaction.amount }}</td>
+                        <td>{{ transaction.total_value|floatformat:2 }}</td>
+                        <td>{{ transaction.institution_name_id }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
