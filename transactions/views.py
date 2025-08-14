@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class TransactionsFileUploadFormView(FormView):
     form_class = TransactionsFileUploadForm
     template_name = "transactions/transactions_upload.html"
-    success_url = reverse_lazy('root')
+    success_url = reverse_lazy('transactions:index')
 
     def form_valid(self, form):
         files = form.cleaned_data["file_field"]

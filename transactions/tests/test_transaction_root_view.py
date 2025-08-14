@@ -3,13 +3,14 @@ import pytest
 from .factories import TransactionOperationFactory, AssetIdentificationFactory
 from decimal import Decimal, InvalidOperation, ROUND_DOWN
 from transactions.models import TransactionOperations
+from django.urls import reverse
 
 @pytest.mark.django_db
-def test_transactions_root_page_with_empty_database(client):
+def test_transactions_index_page_with_empty_database(client):
     ### Arrange ###
 
     ### Act ###
-    response = client.get(path='/transactions/')
+    response = client.get(path=reverse('transactions:index'))
 
     ### Assert ###
     assert 200 == response.status_code
@@ -17,12 +18,12 @@ def test_transactions_root_page_with_empty_database(client):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("num_transactions", [1,10])
-def test_transactions_root_page_distinct_assets(client, num_transactions):
+def test_transactions_index_page_distinct_assets(client, num_transactions):
     ### Arrange ###
     transactions = TransactionOperationFactory.create_batch(size=num_transactions)
 
     ### Act ###
-    response = client.get(path='/transactions/')
+    response = client.get(path=reverse('transactions:index'))
 
     ### Assert ###
     assert 200 == response.status_code
@@ -37,13 +38,13 @@ def test_transactions_root_page_distinct_assets(client, num_transactions):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("num_transactions", [1,10])
-def test_transactions_root_page_same_assets(client, num_transactions):
+def test_transactions_index_page_same_assets(client, num_transactions):
     ### Arrange ###
     fixed_asset = AssetIdentificationFactory.create()
     transactions = TransactionOperationFactory.create_batch(size=num_transactions, asset=fixed_asset, operation=TransactionOperations.TransactionOperation.BUY)
 
     ### Act ###
-    response = client.get(path='/transactions/')
+    response = client.get(path=reverse('transactions:index'))
 
     ### Assert ###
     assert 200 == response.status_code

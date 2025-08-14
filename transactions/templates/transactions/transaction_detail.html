@@ -4,14 +4,14 @@
 
 <h1 class="mb-4">Transactions for {{ ticker }}</h1>
 
-<a href="{% url 'root' %}" class="btn btn-secondary mb-3">Back to Summary</a>
+<a href="{% url 'transactions:index' %}" class="btn btn-secondary mb-3">Back to Summary</a>
 
 <div class="card mb-4">
     <div class="card-header">
         Filters and Sorting
     </div>
     <div class="card-body">
-        <form method="get" action="{% url 'root.detail' ticker %}">
+        <form method="get" action="{% url 'transactions:index.detail' ticker %}">
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
