@@ -1,21 +1,20 @@
-import logging
-
-from django.db.models import DecimalField
-
-import logging
-
-from django.db.models import DecimalField
 
 from .forms import TransactionsFileUploadForm
-from .models import TransactionOperations, AssetIdentification
+from .models import AssetIdentification
+from .models import TransactionInstitutions
+from .models import TransactionOperations
 from .services import process_transactions_file
 from decimal import InvalidOperation
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
+from django.db.models import DecimalField
 from django.db.models import Sum
 from django.urls import reverse_lazy
-from django.views.generic import TemplateView, ListView
+from django.views.generic import ListView
+from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
-from django.contrib.auth.mixins import LoginRequiredMixin
+
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +42,11 @@ class TransactionsView(LoginRequiredMixin, TemplateView):
 
         summary = []
 
-        assets = AssetIdentification.objects.filter(user=request_user)
-        logger.info(f"Assets for user {request_user.username}: {assets}")
+        assets = AssetIdentification.user_asset_identification.get_identification(request_user)
         for asset in assets:
 
-            asset_buys = (TransactionOperations.objects
-                            .filter(user=request_user, asset=asset, operation=TransactionOperations.TransactionOperation.BUY)
+            asset_buys = (TransactionOperations.user_operations.get_operations(request_user)
+                            .filter(asset=asset, operation=TransactionOperations.TransactionOperation.BUY)
                             .aggregate(
                                 buy_amount=Sum(
                                     'amount', 
@@ -64,8 +62,8 @@ class TransactionsView(LoginRequiredMixin, TemplateView):
                                         output_field=DecimalField(max_digits=12, decimal_places=2))
                             ))
 
-            asset_sells = (TransactionOperations.objects
-                            .filter(user=request_user, asset=asset, operation=TransactionOperations.TransactionOperation.SELL)
+            asset_sells = (TransactionOperations.user_operations.get_operations(request_user)
+                            .filter(asset=asset, operation=TransactionOperations.TransactionOperation.SELL)
                             .aggregate(
                                 sell_amount=Sum(
                                     'amount',
@@ -73,13 +71,17 @@ class TransactionsView(LoginRequiredMixin, TemplateView):
                                     output_field=DecimalField(max_digits=30, decimal_places=18)),
                             ))
 
-            institutions = (TransactionOperations.objects
-                            .filter(user=request_user, asset=asset)
+            institutions_ids = (TransactionOperations.user_operations.get_operations(request_user)
+                            .filter(asset=asset)
                             .values_list('institution_name', flat=True)
                             .distinct())
 
+            institutions = []
+            for id in institutions_ids:
+                institutions.append(TransactionInstitutions.user_institutions.filter(id=id).first().name)
+
             item = {}
-            item['ticker'] = asset.asset_ticker
+            item['ticker'] = asset.ticker
             item['amount'] = asset_buys['buy_amount'] - asset_sells['sell_amount']
             item['institutions'] = ', '.join(institutions)
 
@@ -101,7 +103,9 @@ class TransactionDetailView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         ticker = self.kwargs.get('ticker')
-        queryset = TransactionOperations.objects.filter(asset__asset_ticker=ticker)
+        request_user = self.request.user
+
+        queryset = TransactionOperations.user_operations.get_operations(request_user).filter(asset__ticker=ticker)
 
         # Filtering
         filter_operation = self.request.GET.get('filter_operation', '')
