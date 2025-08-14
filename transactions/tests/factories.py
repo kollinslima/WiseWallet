@@ -16,16 +16,16 @@ class AssetClassificationFactory(factory.django.DjangoModelFactory):
         model = AssetClassification
 
     user = factory.SubFactory(UserFactory)
-    asset_type = fuzzy.FuzzyText(length=100)
+    type = fuzzy.FuzzyText(length=100)
 
 class AssetIdentificationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetIdentification
 
     user = factory.SubFactory(UserFactory)
-    asset_ticker = factory.Sequence(lambda n: f"TICKER_{n:03}")
-    asset_name = fuzzy.FuzzyText(length=100)
-    asset_classification = factory.LazyAttribute(
+    ticker = factory.Sequence(lambda n: f"TICKER_{n:03}")
+    name = fuzzy.FuzzyText(length=100)
+    classification = factory.LazyAttribute(
         lambda obj: AssetClassificationFactory(user=obj.user)
     )
 

@@ -46,7 +46,7 @@ def test_transactions_index_page_distinct_assets(client, num_transactions, logge
     assert num_transactions == len(summary)
     
     for transaction in transactions:
-        assert transaction.asset.asset_ticker in [item["ticker"] for item in summary]
+        assert transaction.asset.ticker in [item["ticker"] for item in summary]
         assert transaction.institution_name.name in [item["institutions"] for item in summary]
 
 @pytest.mark.django_db
@@ -70,7 +70,7 @@ def test_transactions_index_page_same_assets(client, num_transactions, logged_us
     summary = response.context['summary']
     assert 1 == len(summary)
     
-    assert fixed_asset.asset_ticker == summary[0]["ticker"]
+    assert fixed_asset.ticker == summary[0]["ticker"]
 
     total_amount = sum(transaction.amount for transaction in transactions)
     assert total_amount == summary[0]["amount"]
@@ -102,7 +102,8 @@ def test_transactions_index_one_logged_user_cannot_get_another_users_transaction
     summary = response.context['summary']
     assert 5 == len(summary)
     for transaction in transactions_user1:
-        assert transaction.asset.asset_ticker in [item["ticker"] for item in summary]
+        assert transaction.asset.ticker in [item["ticker"] for item in summary]
         assert transaction.institution_name.name in [item["institutions"] for item in summary]
 
+    assert 5 == TransactionOperations.user_operations.get_operations(logged_user).count()
     assert 10 == TransactionOperations.objects.count()

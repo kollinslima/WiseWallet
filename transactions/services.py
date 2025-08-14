@@ -91,21 +91,21 @@ def process_transactions_file(file, request_user):
                 asset_description = row_entry[B3TransactionsReportHeader.ASSET_DESCRIPTION].split("-")
 
                 asset_classification,_ = AssetClassification.objects.get_or_create(
-                    user=request_user,
-                    asset_type = UNKNOWN_CLASSIFICATION
+                    user = request_user,
+                    type = UNKNOWN_CLASSIFICATION
                 )
                 
                 asset_identification,_ = AssetIdentification.objects.get_or_create(
-                    user=request_user,
-                    asset_ticker         = asset_description[0].strip(),
-                    asset_name           = asset_description[1].strip(),
-                    asset_classification = asset_classification
+                    user           = request_user,
+                    ticker         = asset_description[0].strip(),
+                    name           = asset_description[1].strip(),
+                    classification = asset_classification
                 )
 
                 institution = row_entry[B3TransactionsReportHeader.INSTITUTION]
 
                 transaction_institution,_ = TransactionInstitutions.objects.get_or_create(
-                    user=request_user,
+                    user = request_user,
                     name = institution
                 )
 

@@ -35,7 +35,7 @@ def test_transaction_index_upload_success(client, logged_user):
     assert 200 == response.status_code
     print(response.content.decode('utf-8'))
     assert 'transactions/transactions.html' in response.template_name
-    assert 1 <= TransactionOperations.objects.count()
+    assert 1 <= TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
 def test_transactions_index_upload_of_non_xlsx_file(client, logged_user):
@@ -56,7 +56,7 @@ def test_transactions_index_upload_of_non_xlsx_file(client, logged_user):
     assert 200 == response.status_code
     assert 'transactions/transactions_upload.html' in response.template_name
     assert 'Invalid file format. Please upload a .xlsx file.' in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
 def test_transactions_index_upload_of_corrupted_xlsx_file(client, logged_user):
@@ -77,7 +77,7 @@ def test_transactions_index_upload_of_corrupted_xlsx_file(client, logged_user):
     assert 200 == response.status_code
     assert 'transactions/transactions_upload.html' in response.template_name
     assert 'Cannot open XLSX file.' in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
 def test_transactions_index_upload_of_incomplete_xlsx_file(client, logged_user):
@@ -101,7 +101,7 @@ def test_transactions_index_upload_of_incomplete_xlsx_file(client, logged_user):
     assert 'transactions/transactions_upload.html' in response.template_name
     assert "Invalid data in row" in response.content.decode('utf-8')
     assert "Error: &lt;B3TransactionsReportHeader.IN_OUT_TRANSACTION_TYPE: &#x27;Entrada/Saída&#x27;&gt;" in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("field,value", [
@@ -138,4 +138,4 @@ def test_transactions_index_upload_of_invalid_xlsx_file(client, field, value, lo
     assert 200 == response.status_code
     assert 'transactions/transactions_upload.html' in response.template_name
     assert "Invalid data in row" in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
