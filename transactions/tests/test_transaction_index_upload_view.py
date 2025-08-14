@@ -4,9 +4,20 @@ from .factories import B3TransactionsFileFactory
 from django.core.files.uploadedfile import SimpleUploadedFile
 from transactions.models import TransactionOperations
 from django.urls import reverse
+from tests.fixtures import logged_user
+
+def test_transactions_index_upload_page_redirects_to_login_for_unauthenticated_users(client):
+    ### Arrange ###
+
+    ### Act ###
+    response = client.get(path=reverse('transactions:index.upload'), follow=True)
+
+    ### Assert ###
+    assert 200 == response.status_code
+    assert 'authentication/login.html' in response.template_name
 
 @pytest.mark.django_db
-def test_transaction_index_upload_success(client):
+def test_transaction_index_upload_success(client, logged_user):
     ### Arrange ###
     b3_well_formatted_transaction_file = B3TransactionsFileFactory()
     form_data = {
@@ -22,11 +33,12 @@ def test_transaction_index_upload_success(client):
 
     ### Assert ###
     assert 200 == response.status_code
+    print(response.content.decode('utf-8'))
     assert 'transactions/transactions.html' in response.template_name
     assert 1 <= TransactionOperations.objects.count()
 
 @pytest.mark.django_db
-def test_transactions_index_upload_of_non_xlsx_file(client):
+def test_transactions_index_upload_of_non_xlsx_file(client, logged_user):
     ### Arrange ###
     txt_file = SimpleUploadedFile("test.txt", b'This is a test File', content_type='text/plain')
     form_data = {
@@ -47,7 +59,7 @@ def test_transactions_index_upload_of_non_xlsx_file(client):
     assert 0 == TransactionOperations.objects.count()
 
 @pytest.mark.django_db
-def test_transactions_index_upload_of_corrupted_xlsx_file(client):
+def test_transactions_index_upload_of_corrupted_xlsx_file(client, logged_user):
     ### Arrange ###
     corrupted_file = SimpleUploadedFile("test.xlsx", b'This is a corrupted test File', content_type='text/plain')
     form_data = {
@@ -68,7 +80,7 @@ def test_transactions_index_upload_of_corrupted_xlsx_file(client):
     assert 0 == TransactionOperations.objects.count()
 
 @pytest.mark.django_db
-def test_transactions_index_upload_of_incomplete_xlsx_file(client):
+def test_transactions_index_upload_of_incomplete_xlsx_file(client, logged_user):
     b3_incomplete_transaction_file = B3TransactionsFileFactory(
         header=["Date", "Transaction", "Ticker", "Amount", "Total Value"],
         num_of_transactions=1
@@ -98,7 +110,7 @@ def test_transactions_index_upload_of_incomplete_xlsx_file(client):
     ("Quantidade", "INVALID"),
     ("Valor da Operação", "INVALID"),
 ])
-def test_transactions_index_upload_of_invalid_xlsx_file(client, field, value):
+def test_transactions_index_upload_of_invalid_xlsx_file(client, field, value, logged_user):
     ### Arrange ###
     content = [["Credito", "01/01/2024", "Transferência - Liquidação", "TICKER11 - NAME", "INSTITUTION", 100, "R$ 10,00", "R$ 1.000,00"]]
     

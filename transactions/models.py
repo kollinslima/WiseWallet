@@ -1,14 +1,16 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from enum import auto
+from django.contrib.auth.models import User
 
 UNKNOWN_CLASSIFICATION = "UNKNOWN"
 UNKNOWN_INSTITUTION    = "UNKNOWN"
 
 class AssetClassification(models.Model):
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='asset_classifications')
     asset_type = models.CharField(max_length=100, primary_key=True)
 
 class AssetIdentification(models.Model):
+    user                 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='asset_identifications')
     asset_ticker         = models.CharField(max_length=10, primary_key=True)
     asset_name           = models.CharField(max_length=100, blank=True)
     asset_classification = models.ForeignKey(AssetClassification,
@@ -16,7 +18,8 @@ class AssetIdentification(models.Model):
                                              default=UNKNOWN_CLASSIFICATION)
 
 class TransactionInstitutions(models.Model):
-    institution_name = models.CharField(max_length=100, primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transaction_institutions')
+    name = models.CharField(max_length=100, primary_key=True)
 
 class TransactionOperations(models.Model):
 
@@ -25,6 +28,7 @@ class TransactionOperations(models.Model):
         SELL              = "Sell", _("Sell")
         UNKNOWN_OPERATION = "Unknown", _("UNKNOWN_OPERATION")
 
+    user             = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transaction_operations')
     asset            = models.ForeignKey(AssetIdentification,
                                          on_delete=models.CASCADE)
     institution_name = models.ForeignKey(TransactionInstitutions,

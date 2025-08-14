@@ -59,7 +59,7 @@ def _get_transaction_operation(in_out_operation, transaction_type):
     return transaction_operation
 
 
-def process_transactions_file(file):
+def process_transactions_file(file, request_user):
     if not file.name.endswith('.xlsx'):
         raise ValidationError("Invalid file format. Please upload a .xlsx file.")
     try:
@@ -91,19 +91,22 @@ def process_transactions_file(file):
                 asset_description = row_entry[B3TransactionsReportHeader.ASSET_DESCRIPTION].split("-")
 
                 asset_classification,_ = AssetClassification.objects.get_or_create(
+                    user=request_user,
                     asset_type = UNKNOWN_CLASSIFICATION
                 )
                 
                 asset_identification,_ = AssetIdentification.objects.get_or_create(
-                        asset_ticker         = asset_description[0].strip(),
-                        asset_name           = asset_description[1].strip(),
-                        asset_classification = asset_classification
+                    user=request_user,
+                    asset_ticker         = asset_description[0].strip(),
+                    asset_name           = asset_description[1].strip(),
+                    asset_classification = asset_classification
                 )
 
                 institution = row_entry[B3TransactionsReportHeader.INSTITUTION]
 
                 transaction_institution,_ = TransactionInstitutions.objects.get_or_create(
-                        institution_name = institution
+                    user=request_user,
+                    name = institution
                 )
 
                 settlement_date = datetime.strptime(
@@ -120,6 +123,7 @@ def process_transactions_file(file):
                 total_value = Decimal(transaction_value)
 
                 TransactionOperations.objects.create(
+                    user=request_user,
                     asset=asset_identification,
                     institution_name=transaction_institution,
                     operation=transaction_operation,
