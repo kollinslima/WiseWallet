@@ -1,46 +1,51 @@
-import logging
-
-from django.db.models import DecimalField
 
 from .forms import TransactionsFileUploadForm
-from .models import TransactionOperations, AssetIdentification
+from .models import AssetIdentification
+from .models import TransactionInstitutions
+from .models import TransactionOperations
 from .services import process_transactions_file
 from decimal import InvalidOperation
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
+from django.db.models import DecimalField
 from django.db.models import Sum
 from django.urls import reverse_lazy
-from django.views.generic import TemplateView, ListView
+from django.views.generic import ListView
+from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
+
+import logging
 
 logger = logging.getLogger(__name__)
 
-class TransactionsFileUploadFormView(FormView):
+class TransactionsFileUploadFormView(LoginRequiredMixin, FormView):
     form_class = TransactionsFileUploadForm
     template_name = "transactions/transactions_upload.html"
-    success_url = reverse_lazy('root')
+    success_url = reverse_lazy('transactions:index')
 
     def form_valid(self, form):
         files = form.cleaned_data["file_field"]
         try:
             for f in files:
-                process_transactions_file(f)
+                process_transactions_file(f, self.request.user)
         except ValidationError as e:
             form.add_error('file_field', e.message)
             return self.form_invalid(form)
         return super().form_valid(form)
 
-class TransactionsView(TemplateView):
+class TransactionsView(LoginRequiredMixin, TemplateView):
     template_name = "transactions/transactions.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        request_user = self.request.user
 
         summary = []
 
-        assets = AssetIdentification.objects.all()
+        assets = AssetIdentification.user_asset_identification.get_identification(request_user)
         for asset in assets:
 
-            asset_buys = (TransactionOperations.objects
+            asset_buys = (TransactionOperations.user_operations.get_operations(request_user)
                             .filter(asset=asset, operation=TransactionOperations.TransactionOperation.BUY)
                             .aggregate(
                                 buy_amount=Sum(
@@ -57,7 +62,7 @@ class TransactionsView(TemplateView):
                                         output_field=DecimalField(max_digits=12, decimal_places=2))
                             ))
 
-            asset_sells = (TransactionOperations.objects
+            asset_sells = (TransactionOperations.user_operations.get_operations(request_user)
                             .filter(asset=asset, operation=TransactionOperations.TransactionOperation.SELL)
                             .aggregate(
                                 sell_amount=Sum(
@@ -66,13 +71,17 @@ class TransactionsView(TemplateView):
                                     output_field=DecimalField(max_digits=30, decimal_places=18)),
                             ))
 
-            institutions = (TransactionOperations.objects
+            institutions_ids = (TransactionOperations.user_operations.get_operations(request_user)
                             .filter(asset=asset)
                             .values_list('institution_name', flat=True)
                             .distinct())
 
+            institutions = []
+            for id in institutions_ids:
+                institutions.append(TransactionInstitutions.user_institutions.filter(id=id).first().name)
+
             item = {}
-            item['ticker'] = asset.asset_ticker
+            item['ticker'] = asset.ticker
             item['amount'] = asset_buys['buy_amount'] - asset_sells['sell_amount']
             item['institutions'] = ', '.join(institutions)
 
@@ -87,15 +96,16 @@ class TransactionsView(TemplateView):
         context['summary'] = summary
         return context
 
-
-class TransactionDetailView(ListView):
+class TransactionDetailView(LoginRequiredMixin, ListView):
     model = TransactionOperations
     context_object_name = "transactions"
     template_name = "transactions/transaction_detail.html"
 
     def get_queryset(self):
         ticker = self.kwargs.get('ticker')
-        queryset = TransactionOperations.objects.filter(asset__asset_ticker=ticker)
+        request_user = self.request.user
+
+        queryset = TransactionOperations.user_operations.get_operations(request_user).filter(asset__ticker=ticker)
 
         # Filtering
         filter_operation = self.request.GET.get('filter_operation', '')
@@ -114,8 +124,7 @@ class TransactionDetailView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        #  context['current_sort'] = self.request.GET.get('sort', '-settlement_date')
-        #  context['current_filter_operation'] = self.request.GET.get('filter_operation', '')
         context['ticker'] = self.kwargs.get('ticker')
         return context
+
 

@@ -9,33 +9,44 @@ from factory import fuzzy
 from datetime import date, timedelta
 from django.core.files.uploadedfile import SimpleUploadedFile
 from transactions.models import TransactionOperations, TransactionInstitutions, AssetClassification, AssetIdentification
+from tests.factories import UserFactory
 
 class AssetClassificationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetClassification
 
-    asset_type = fuzzy.FuzzyText(length=100)
+    user = factory.SubFactory(UserFactory)
+    type = fuzzy.FuzzyText(length=100)
 
 class AssetIdentificationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetIdentification
 
-    asset_ticker = factory.Sequence(lambda n: f"TICKER_{n:03}")
-    asset_name = fuzzy.FuzzyText(length=100)
-    asset_classification = factory.SubFactory(AssetClassificationFactory)
+    user = factory.SubFactory(UserFactory)
+    ticker = factory.Sequence(lambda n: f"TICKER_{n:03}")
+    name = fuzzy.FuzzyText(length=100)
+    classification = factory.LazyAttribute(
+        lambda obj: AssetClassificationFactory(user=obj.user)
+    )
 
 class TransactionInstitutionsFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TransactionInstitutions
 
-    institution_name = fuzzy.FuzzyText(length=100)
+    user = factory.SubFactory(UserFactory)
+    name = fuzzy.FuzzyText(length=100)
 
 class TransactionOperationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TransactionOperations
 
-    asset = factory.SubFactory(AssetIdentificationFactory)
-    institution_name = factory.SubFactory(TransactionInstitutionsFactory)
+    user = factory.SubFactory(UserFactory)
+    asset = factory.LazyAttribute(
+        lambda obj: AssetIdentificationFactory(user=obj.user)
+    )
+    institution_name = factory.LazyAttribute(
+        lambda obj: TransactionInstitutionsFactory(user=obj.user)
+    )
     operation = fuzzy.FuzzyChoice([choice[0] for choice in TransactionOperations.TransactionOperation.choices])
     operation_date = fuzzy.FuzzyDate(date(2008, 1, 1))
     settlement_date = fuzzy.FuzzyDate(date(2008, 1, 1))

@@ -3,9 +3,21 @@ import pytest
 from .factories import B3TransactionsFileFactory
 from django.core.files.uploadedfile import SimpleUploadedFile
 from transactions.models import TransactionOperations
+from django.urls import reverse
+from tests.fixtures import logged_user
+
+def test_transactions_index_upload_page_redirects_to_login_for_unauthenticated_users(client):
+    ### Arrange ###
+
+    ### Act ###
+    response = client.get(path=reverse('transactions:index.upload'), follow=True)
+
+    ### Assert ###
+    assert 200 == response.status_code
+    assert 'authentication/login.html' in response.template_name
 
 @pytest.mark.django_db
-def test_transaction_root_upload_success(client):
+def test_transaction_index_upload_success(client, logged_user):
     ### Arrange ###
     b3_well_formatted_transaction_file = B3TransactionsFileFactory()
     form_data = {
@@ -14,18 +26,19 @@ def test_transaction_root_upload_success(client):
 
     ### Act ###
     response = client.post(
-        path='/transactions/upload',
+        path=reverse('transactions:index.upload'),
         data=form_data,
         follow=True
     )
 
     ### Assert ###
     assert 200 == response.status_code
+    print(response.content.decode('utf-8'))
     assert 'transactions/transactions.html' in response.template_name
-    assert 1 <= TransactionOperations.objects.count()
+    assert 1 <= TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
-def test_transactions_root_upload_of_non_xlsx_file(client):
+def test_transactions_index_upload_of_non_xlsx_file(client, logged_user):
     ### Arrange ###
     txt_file = SimpleUploadedFile("test.txt", b'This is a test File', content_type='text/plain')
     form_data = {
@@ -34,7 +47,7 @@ def test_transactions_root_upload_of_non_xlsx_file(client):
 
     ### Act ###
     response = client.post(
-        path='/transactions/upload',
+        path=reverse('transactions:index.upload'),
         data=form_data,
         follow=True
     )
@@ -43,10 +56,10 @@ def test_transactions_root_upload_of_non_xlsx_file(client):
     assert 200 == response.status_code
     assert 'transactions/transactions_upload.html' in response.template_name
     assert 'Invalid file format. Please upload a .xlsx file.' in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
-def test_transactions_root_upload_of_corrupted_xlsx_file(client):
+def test_transactions_index_upload_of_corrupted_xlsx_file(client, logged_user):
     ### Arrange ###
     corrupted_file = SimpleUploadedFile("test.xlsx", b'This is a corrupted test File', content_type='text/plain')
     form_data = {
@@ -55,7 +68,7 @@ def test_transactions_root_upload_of_corrupted_xlsx_file(client):
 
     ### Act ###
     response = client.post(
-        path='/transactions/upload',
+        path=reverse('transactions:index.upload'),
         data=form_data,
         follow=True
     )
@@ -64,10 +77,10 @@ def test_transactions_root_upload_of_corrupted_xlsx_file(client):
     assert 200 == response.status_code
     assert 'transactions/transactions_upload.html' in response.template_name
     assert 'Cannot open XLSX file.' in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
-def test_transactions_root_upload_of_incomplete_xlsx_file(client):
+def test_transactions_index_upload_of_incomplete_xlsx_file(client, logged_user):
     b3_incomplete_transaction_file = B3TransactionsFileFactory(
         header=["Date", "Transaction", "Ticker", "Amount", "Total Value"],
         num_of_transactions=1
@@ -78,7 +91,7 @@ def test_transactions_root_upload_of_incomplete_xlsx_file(client):
 
     ### Act ###
     response = client.post(
-        path='/transactions/upload',
+        path=reverse('transactions:index.upload'),
         data=form_data,
         follow=True
     )
@@ -88,7 +101,7 @@ def test_transactions_root_upload_of_incomplete_xlsx_file(client):
     assert 'transactions/transactions_upload.html' in response.template_name
     assert "Invalid data in row" in response.content.decode('utf-8')
     assert "Error: &lt;B3TransactionsReportHeader.IN_OUT_TRANSACTION_TYPE: &#x27;Entrada/Saída&#x27;&gt;" in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("field,value", [
@@ -97,7 +110,7 @@ def test_transactions_root_upload_of_incomplete_xlsx_file(client):
     ("Quantidade", "INVALID"),
     ("Valor da Operação", "INVALID"),
 ])
-def test_transactions_root_upload_of_invalid_xlsx_file(client, field, value):
+def test_transactions_index_upload_of_invalid_xlsx_file(client, field, value, logged_user):
     ### Arrange ###
     content = [["Credito", "01/01/2024", "Transferência - Liquidação", "TICKER11 - NAME", "INSTITUTION", 100, "R$ 10,00", "R$ 1.000,00"]]
     
@@ -116,7 +129,7 @@ def test_transactions_root_upload_of_invalid_xlsx_file(client, field, value):
 
     ### Act ###
     response = client.post(
-        path='/transactions/upload',
+        path=reverse('transactions:index.upload'),
         data=form_data,
         follow=True
     )
@@ -125,4 +138,4 @@ def test_transactions_root_upload_of_invalid_xlsx_file(client, field, value):
     assert 200 == response.status_code
     assert 'transactions/transactions_upload.html' in response.template_name
     assert "Invalid data in row" in response.content.decode('utf-8')
-    assert 0 == TransactionOperations.objects.count()
+    assert 0 == TransactionOperations.user_operations.get_operations(logged_user).count()
