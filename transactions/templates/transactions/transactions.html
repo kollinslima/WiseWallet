@@ -2,13 +2,7 @@
 
 {% block main_content %}
 
-<h1 class="mb-4">Current Possition</h1>
-
-<div class="d-grid justify-content-end">
-    <a href="{% url 'transactions:index.upload' %}" class="btn btn-primary">Upload</a>
-</div>
-
-<h2 class="mt-5 mb-3">Summary of Trades</h2>
+<h1 class="mt-5 mb-3">Summary of Trades</h2>
 
 <div class="card">
     <div class="card-body">
@@ -36,7 +30,7 @@
                 </tbody>
             </table>
         {% else %}
-            <p class="text-center">No trades found. Import a report to get started.</p>
+            <p class="text-center">No trades found.</p>
         {% endif %}
     </div>
 </div>
