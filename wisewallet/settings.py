@@ -39,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Installed Apps
+    'django_extensions',
+    'django_cleanup',
     
     # My Apps
     'dashboard',
@@ -80,11 +84,15 @@ WSGI_APPLICATION = 'wisewallet.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+DEFAULT_DB_ROOT_PATH = Path(config('DEFAULT_DB_ROOT_PATH', default=BASE_DIR))
+APP_DB_ROOT_PATH = Path(config('APP_DB_ROOT_PATH', default=BASE_DIR))
+USER_DB_ROOT_PATH = Path(config('USER_DB_ROOT_PATH', default=BASE_DIR))
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'NAME': DEFAULT_DB_ROOT_PATH / 'db.sqlite3',
+    },
 }
 
 
