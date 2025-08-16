@@ -1,89 +1,34 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import User
+from django.db import models, transaction
+from django.core.files.storage import FileSystemStorage
+from django.utils.text import get_valid_filename
+from pathlib import Path
 
-UNKNOWN_CLASSIFICATION = "UNKNOWN"
-UNKNOWN_TICKER         = "UNKNOWN"
-UNKNOWN_INSTITUTION    = "UNKNOWN"
+B3_TRANSACTION_REPORT_UPLOAD_DIR = Path('reports/B3/transactions/')
 
-class AssetClassificationManager(models.Manager):
-    def get_classifications(self, user):
-        return super().get_queryset().filter(user=user)
-
-class AssetClassification(models.Model):
-
+class B3TransactionReports(models.Model):
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user', 'type'], name='unique_asset_classification')
+            models.UniqueConstraint(fields=['report'], name='unique_b3_transaction_report')
         ]
+    report = models.FileField(upload_to=str(B3_TRANSACTION_REPORT_UPLOAD_DIR), 
+                              storage=FileSystemStorage(allow_overwrite=True))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    type = models.CharField(max_length=100, default=UNKNOWN_CLASSIFICATION)
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            valid_name = get_valid_filename(self.report.name)
+            existing_record = B3TransactionReports.objects.select_for_update().filter(
+                report=B3_TRANSACTION_REPORT_UPLOAD_DIR.joinpath(Path(valid_name))
+            ).first()
 
-    objects = models.Manager()
-    user_classifications = AssetClassificationManager()
+            if existing_record:
+                # Update existing record
+                self.pk = existing_record.pk
+                self.created_at = existing_record.created_at
 
-class AssetIdentificationManager(models.Manager):
-    def get_identification(self, user):
-        return super().get_queryset().filter(user=user)
+            super(B3TransactionReports, self).save(*args, **kwargs)
 
-class AssetIdentification(models.Model):
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'ticker'], name='unique_asset_identification')
-        ]
 
-    user           = models.ForeignKey(User, on_delete=models.CASCADE)
-    ticker         = models.CharField(max_length=10, default=UNKNOWN_TICKER)
-    name           = models.CharField(max_length=100, blank=True)
-    classification = models.ForeignKey(AssetClassification,
-                                             on_delete=models.SET_DEFAULT,
-                                             default=UNKNOWN_CLASSIFICATION)
-
-    objects = models.Manager()
-    user_asset_identification = AssetIdentificationManager()
-
-class TransactionInstitutionsManager(models.Manager):
-    def get_institutions(self, user):
-        return super().get_queryset().filter(user=user)
-
-class TransactionInstitutions(models.Model):
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'name'], name='unique_transaction_institution')
-        ]
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, default=UNKNOWN_INSTITUTION)
-
-    objects = models.Manager()
-    user_institutions = TransactionInstitutionsManager()
-
-class TransactionOperationsManager(models.Manager):
-    def get_operations(self, user):
-        return super().get_queryset().filter(user=user)
-
-class TransactionOperations(models.Model):
-
-    class TransactionOperation(models.TextChoices):
-        BUY               = "Buy", _("Buy")
-        SELL              = "Sell", _("Sell")
-        UNKNOWN_OPERATION = "Unknown", _("UNKNOWN_OPERATION")
-
-    user             = models.ForeignKey(User, on_delete=models.CASCADE)
-    asset            = models.ForeignKey(AssetIdentification,
-                                         on_delete=models.CASCADE)
-    institution_name = models.ForeignKey(TransactionInstitutions,
-                                         on_delete=models.SET_DEFAULT,
-                                         default=UNKNOWN_INSTITUTION)
-    operation        = models.CharField(choices=TransactionOperation)
-    operation_date   = models.DateField(null=True, blank=True)
-    settlement_date  = models.DateField()
-    amount           = models.DecimalField(max_digits=30, decimal_places=18)
-    total_value      = models.DecimalField(max_digits=12, decimal_places=2)
-    fees             = models.DecimalField(max_digits=12,
-                                           decimal_places=2,
-                                           default=0)
-
-    objects = models.Manager()
-    user_operations = TransactionOperationsManager()
-
+    def __str__(self):
+        return f"{self.updated_at.strftime('%Y-%m-%d %H:%M:%S')} - {self.report.name}"

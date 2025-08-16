@@ -205,4 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-.vscode/settings.json
+.vscode/
+
+# WiseWallet specific files
+static/
+media/

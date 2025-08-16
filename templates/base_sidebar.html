@@ -13,26 +13,6 @@
                     <a class="nav-link d-flex align-items-center gap-2" href="{% url 'transactions:index' %}">Transactions</a>
                 </li> 
             </ul> 
-
-            <hr class="my-3"/>
-
-            <ul class="nav flex-column mb-auto"> 
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center gap-2" href="#">Settings</a>
-                    </li>
-                    <li class="nav-item">
-                        <form method="post" action="{% url 'authentication:index.logout' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-link d-flex align-items-center gap-2">Logout</button>
-                        </form>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center gap-2" href="{% url 'authentication:index' %}">Login</a>
-                    </li>
-                {% endif %}
-            </ul> 
         </div> 
     </div> 
 </div>
